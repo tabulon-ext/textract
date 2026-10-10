@@ -1,14 +1,14 @@
 from email.parser import Parser as EmailParser
 
-from .utils import BaseParser
+from .utils import DecodedParser
 
 
-class Parser(BaseParser):
+class Parser(DecodedParser):
     """Extract text from email messages in .eml format. This gets the
     subject and all text from the contents.
     """
 
-    def extract(self, filename, **kwargs):
+    def extract_from_text(self, text, **kwargs):
         # TODO: could make option here to omit all non-original content
         # (forwarded content, quoted content in reply, signature, etc),
         # perhaps using https://github.com/zapier/email-reply-parser
@@ -16,12 +16,11 @@ class Parser(BaseParser):
         # TODO: could also potentially grab text/html content instead of
         # only grabbing text/plain content
 
-        with open(filename) as stream:
-            parser = EmailParser()
-            message = parser.parse(stream)
+        message = EmailParser().parsestr(text)
 
-        text_content = []
-        for part in message.walk():
-            if part.get_content_type().startswith('text/plain'):
-                text_content.append(part.get_payload())
-        return '\n\n'.join(text_content)
+        text_content = [
+            str(part.get_payload())
+            for part in message.walk()
+            if part.get_content_type().startswith("text/plain")
+        ]
+        return "\n\n".join(text_content)

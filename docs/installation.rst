@@ -6,25 +6,32 @@ Installation
 One of the main goals of textract is to make it as easy as possible to
 start using textract (meaning that installation should be as quick and
 painless as possible). This package is built on top of several python
-packages and other source libraries. Assuming you are using ``pip`` or
-``easy_install`` to install textract, the `python packages
-<https://github.com/deanmalmgren/textract/blob/master/requirements/python>`_
-are all installed by default with textract. The source libraries are a
+packages and other source libraries. Python packages are installed
+automatically when using ``pip`` or ``uv``. The source libraries are a
 separate matter though and largely depend on your operating system.
+
+Modern Python tooling options:
+
+.. code-block:: bash
+
+    # One-off execution
+    uvx textract path/to/file.pdf
+
+    # Install as tool
+    uv tool install textract
 
 Ubuntu / Debian
 ---------------
 
-There are two steps required to run this package on
-Ubuntu/Debian. First you must install some system packages using the
-`apt-get <https://help.ubuntu.com/14.04/serverguide/apt-get.html>`_
-package manager before installing textract from pypi.
+First install system packages using apt-get, then install textract from PyPI:
 
 .. code-block:: bash
 
-    apt-get install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr \
+    apt-get install python-dev libxml2-dev libxslt1-dev unrtf poppler-utils ghostscript tesseract-ocr \
     flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
     pip install textract
+    # or with uv
+    uv pip install textract
 
 .. note::
 
@@ -32,29 +39,22 @@ package manager before installing textract from pypi.
     instances of Ubuntu. See `issue #19
     <https://github.com/deanmalmgren/textract/pull/19>`_ for details
 
-OSX
----
+macOS
+-----
 
-These steps rely on you having `homebrew <http://brew.sh/>`_ installed
-as well as the `cask <http://caskroom.io/>`_ plugin (``brew tap caskroom/cask``). The basic idea is to first install
-`XQuartz <https://xquartz.macosforge.org/landing/>`_ before
-installing a bunch of system packages before installing textract from
-pypi.
+These steps rely on you having `Homebrew <https://brew.sh/>`_ installed.
+First install system packages, then install textract from PyPI:
 
 .. code-block:: bash
 
-    brew install --cask xquartz
-    brew install poppler antiword unrtf tesseract swig
+    brew install ghostscript poppler sox tesseract unrtf swig
     pip install textract
-
-..     brew install libxml2 libxslt antiword poppler tesseract
-..     brew link libxml2 libxslt
+    # or with uv
+    uv pip install textract
 
 .. note::
 
-    `pstotext <http://pages.cs.wisc.edu/~ghost/doc/pstotext.htm>`_ is
-    not currently a part of homebrew so ``.ps`` extraction must be
-    enabled by manually installing from source.
+    ``ghostscript`` provides ``ps2ascii`` for ``.ps`` file extraction.
 
 .. note::
 
@@ -62,18 +62,266 @@ pypi.
     homebrew, you may also need to install the python
     development header files for textract to properly install.
 
+.. note::
+
+    **pocketsphinx and Python 3.14+ on macOS**: No prebuilt wheel exists yet
+    for Python 3.14 on macOS ARM64. When installed from source,
+    scikit-build-core's post-build steps invalidate the code signature, causing
+    macOS to kill the process with ``SIGKILL (Code Signature Invalid)`` when the
+    extension loads. If you see a ``RuntimeError`` mentioning an invalid code
+    signature when using ``method="sphinx"``, re-sign the extension:
+
+    .. code-block:: bash
+
+        python -c "
+        import subprocess
+        from pathlib import Path
+        import importlib.util
+        spec = importlib.util.find_spec('pocketsphinx')
+        for loc in (spec.submodule_search_locations or []):
+            for so in Path(loc).glob('_pocketsphinx.cpython-*-darwin.so'):
+                subprocess.run(['codesign', '-s', '-', '-f', str(so)], check=True)
+                print(f'Re-signed: {so}')
+        "
+
+    This is a known upstream issue; once a Python 3.14 macOS wheel is published
+    to PyPI the workaround will no longer be needed.
+
+Windows
+-------
+
+Install `Chocolatey <https://chocolatey.org/install>`_ then install system packages:
+
+.. code-block:: powershell
+
+    choco install tesseract ghostscript sox.portable poppler -y
+    pip install textract
+    # or with uv
+    uv pip install textract
+
+.. note::
+
+    Two parsers are **not supported on Windows**:
+
+    - ``.mp3`` / ``.ogg``: `sox.portable <https://community.chocolatey.org/packages/sox.portable>`_
+      does not include ``libmad``. SoX dynamically loads ``libmad.dll`` for MP3
+      decoding but does not ship it due to patent restrictions — see the
+      `SoX mailing list discussion <https://sourceforge.net/p/sox/mailman/message/27169341/>`_.
+      Use Linux or macOS where ``libsox-fmt-mp3``/``mad`` are available.
+
+    - ``.rtf``: `unrtf <https://www.gnu.org/software/unrtf/>`_ is a GNU project
+      with no Windows port and no Chocolatey package. RTF extraction is only
+      available on Linux (``apt install unrtf``) and macOS (``brew install unrtf``).
+
 FreeBSD
 -------
 
-Setting up this package on FreeBSD pretty much follows the steps for
-Ubuntu / Debian while using ``pkg`` as package manager.
+First install system packages using pkg, then install textract from PyPI:
 
 .. code-block:: bash
 
-    pkg install lang/python38 devel/py-pip textproc/libxml2 textproc/libxslt textproc/antiword textproc/unrtf \
+    pkg install lang/python38 devel/py-pip textproc/libxml2 textproc/libxslt textproc/unrtf \
     graphics/poppler print/pstotext graphics/tesseract audio/flac multimedia/ffmpeg audio/lame audio/sox \
     graphics/jpeg-turbo
     pip install textract
+    # or with uv
+    uv pip install textract
+
+RHEL / Rocky Linux / AlmaLinux / CentOS Stream
+-----------------------------------------------
+
+textract isn't tested in CI on any Red Hat family distro (GitHub Actions has no
+hosted RHEL runner), but ``scripts/test_redhat_family_install.sh`` in this
+repository probes it against real images with Docker. On Rocky Linux 8/9,
+AlmaLinux 9 and CentOS Stream 9, install the system packages plus a newer
+Python from AppStream/EPEL (the system ``python3`` is 3.9 on EL9 and 3.6 on
+EL8, both below textract's ``>=3.10`` floor), then build your virtualenv with
+that newer Python:
+
+.. code-block:: bash
+
+    # EL9 (Rocky 9, AlmaLinux 9, CentOS Stream 9)
+    dnf install -y epel-release
+    dnf config-manager --set-enabled crb   # powertools on EL8
+    dnf install -y python3.13 python3.13-devel python3.13-pip gcc \
+        libxml2-devel libxslt-devel libjpeg-turbo-devel swig \
+        tesseract sox ghostscript poppler-utils libreoffice-writer
+    python3.13 -m venv .venv && source .venv/bin/activate
+    pip install textract
+
+.. note::
+
+    On Rocky Linux 8, use ``python3.11`` instead of ``python3.12``:
+    AppStream's ``python3.12`` package links against a newer ``libexpat``
+    than EL8 ships, and ``pip`` fails at import time with
+    ``undefined symbol: XML_SetBillionLaughsAttackProtectionMaximumAmplification``.
+    ``python3.11`` doesn't hit this.
+
+.. note::
+
+    ``.rtf`` is **not supported**: ``unrtf`` isn't packaged for EL8 or EL9,
+    in EPEL or elsewhere. Pre-convert with LibreOffice instead, the same
+    workaround used for legacy ``.doc`` files
+    (see :ref:`converting-legacy-doc-files`):
+
+    .. code-block:: bash
+
+        soffice --headless --convert-to txt --outdir out/ *.rtf
+
+Every other extension, including ``.doc`` via LibreOffice and ``.mp3``/``.wav``
+via ``--method sphinx``, is confirmed working on all four distros above.
+
+Red Hat's own UBI9 container images (``registry.access.redhat.com/ubi9/ubi``)
+are **not sufficient** on their own: without a paid RHEL subscription
+registered via ``subscription-manager``, UBI9's mirrored repos don't carry
+``tesseract``, ``libreoffice-writer``, ``swig`` or a Python newer than the
+system 3.9, even with EPEL enabled. Use Rocky Linux, AlmaLinux or CentOS
+Stream instead, or register the subscription to unlock RHEL's full AppStream
+content.
+
+.. note::
+
+    These results are from ``linux/arm64`` images (Docker on Apple Silicon);
+    package availability has not been separately verified on ``linux/amd64``.
+
+Docker
+------
+
+A container image is published to `GHCR
+<https://github.com/deanmalmgren/textract/pkgs/container/textract>`_ with every
+system dependency (tesseract, ghostscript, poppler, sox, pocketsphinx)
+preinstalled, if you want to try out all of textract's capabilities without
+local installation and/or want to run textract in a hosted environment.
+
+.. code-block:: bash
+
+    docker run --rm -v "$PWD:/data" ghcr.io/deanmalmgren/textract:latest-full /data/path/to/file.pdf
+
+Any CLI option works the same way, for example forcing OCR on a scanned PDF:
+
+.. code-block:: bash
+
+    docker run --rm -v "$PWD:/data" ghcr.io/deanmalmgren/textract:latest-full --method tesseract /data/scan.pdf
+
+Audio transcription defaults to Google's network speech API; the image also
+includes pocketsphinx, so ``--method sphinx`` works offline:
+
+.. code-block:: bash
+
+    docker run --rm -v "$PWD:/data" ghcr.io/deanmalmgren/textract:latest-full --method sphinx /data/audio.wav
+
+The image doesn't include LibreOffice by default; see
+:ref:`converting-legacy-doc-files` for how to add it if you need ``.doc``
+support.
+
+.. _converting-legacy-doc-files:
+
+Converting legacy ``.doc`` files
+--------------------------------
+
+Legacy ``.doc`` (Word 97-2003 binary) files are extracted with LibreOffice,
+which is an *optional* runtime dependency: textract only shells out to the
+``soffice`` executable when you actually process a ``.doc`` file, and every
+other format works without it. None of the install instructions above include
+it, since most textract users never touch legacy ``.doc`` files.
+
+If you do need it, install it yourself:
+
+.. code-block:: bash
+
+    # Ubuntu / Debian
+    apt-get install libreoffice-writer
+
+    # macOS (via Homebrew)
+    brew install --cask xquartz libreoffice
+
+    # Windows (via Chocolatey)
+    choco install libreoffice-fresh -y
+
+    # FreeBSD
+    pkg install editors/libreoffice
+
+    # Docker: add to the apt-get install line in the Dockerfile and rebuild
+    apt-get install libreoffice-writer dbus-x11
+
+Once ``soffice`` is on your ``PATH``, textract picks it up automatically the
+next time it processes a ``.doc`` file.
+
+If you would rather not install LibreOffice alongside textract at all (for
+example in a slim container), you can pre-convert your ``.doc`` files to
+``.docx`` once, elsewhere, and hand the results to textract, whose ``.docx``
+parser is pure Python:
+
+.. code-block:: bash
+
+    soffice --headless --convert-to docx --outdir out/ *.doc
+
+Then run ``textract out/whatever.docx`` as usual. This keeps the heavier
+converter out of your extraction pipeline while still supporting legacy
+documents.
+
+.. _ocr-troubleshooting:
+
+Troubleshooting OCR (images and scanned PDFs)
+---------------------------------------------
+
+Text extraction from images (``.jpg``, ``.png``, ``.gif``) and scanned PDFs
+relies on `tesseract-ocr <https://tesseract-ocr.github.io/>`_. If textract
+returns empty output, whitespace, or placeholder characters instead of text,
+tesseract is usually either not installed or not on your ``PATH``.
+
+Verify that tesseract is installed and reachable:
+
+.. code-block:: bash
+
+    tesseract --version      # prints the installed version
+    which tesseract          # Linux / macOS: prints the resolved path
+    where tesseract          # Windows (PowerShell / cmd): prints the resolved path
+
+If those commands fail, install tesseract with your platform's package manager
+(see the sections above) and re-open a shell so the updated ``PATH`` takes
+effect.
+
+Confirm tesseract can read your file on its own, independent of textract:
+
+.. code-block:: bash
+
+    tesseract scanned_page.png stdout
+
+If that prints the expected text but ``textract scanned_page.png`` does not,
+the problem is in how textract invokes tesseract rather than tesseract itself,
+and is worth reporting as a bug.
+
+.. note::
+
+    Scanned PDFs need the ``tesseract`` method explicitly, because the default
+    ``pdftotext`` path only extracts an existing text layer (which a scan does
+    not have):
+
+    .. code-block:: bash
+
+        textract --method tesseract scanned.pdf
+
+    This also requires ``pdftoppm`` (part of poppler) to rasterize each page
+    before OCR.
+
+Common failure modes:
+
+- If textract fails with "The command ``tesseract`` failed because the
+  executable is not installed", install ``tesseract-ocr`` and confirm
+  ``tesseract --version`` works in the same shell you run textract from.
+- Empty output or image placeholders mean tesseract isn't running. Test it
+  directly with ``tesseract <file> stdout`` and check your ``PATH``.
+- Wrong or missing characters for non-English text mean the language pack is
+  missing. Install it for your language (for example ``tesseract-ocr-ces`` for
+  Czech on Debian/Ubuntu) so tesseract can recognize the script.
+
+Reference: CI System Dependencies
+----------------------------------
+
+The canonical list of system dependencies is maintained in the GitHub Actions
+workflow at `.github/actions/setup/action.yml <https://github.com/deanmalmgren/textract/blob/main/.github/actions/setup/action.yml>`_.
+This is what CI uses and is kept up-to-date with each platform's requirements.
 
 Don't see your operating system installation instructions here?
 ---------------------------------------------------------------
@@ -104,20 +352,25 @@ documentation about how to install the textract dependencies, please
 
     - python header files are required for building lxml.
 
-    - `antiword <http://www.winfield.demon.nl/>`_ is required by the
-      ``.doc`` parser.
+    - `LibreOffice <https://www.libreoffice.org/>`_ (the ``soffice``
+      executable) is *optionally* required by the ``.doc`` parser. It is only
+      invoked when you extract a legacy ``.doc`` file; if it isn't installed,
+      textract raises an error explaining how to install it or pre-convert the
+      file. This replaces ``antiword``, which is no longer maintained or
+      packaged. See :ref:`converting-legacy-doc-files` for a batch
+      pre-conversion alternative.
 
-    - `pdftotext <http://poppler.freedesktop.org/>`_ is *optionally*
-      required by the ``.pdf`` parser (there is a pure python fallback
-      that works if pdftotext isn't installed).
+    - `pdftotext <https://poppler.freedesktop.org/>`_ (part of poppler) is
+      *optionally* required by the ``.pdf`` parser (there is a pure python
+      fallback that works if pdftotext isn't installed).
 
-    - `pstotext <http://pages.cs.wisc.edu/~ghost/doc/pstotext.htm>`_
+    - `ps2ascii <https://www.ghostscript.com/>`_ (part of ghostscript)
       is required by the ``.ps`` parser.
 
-    - `tesseract-ocr <https://code.google.com/p/tesseract-ocr/>`_
+    - `tesseract-ocr <https://tesseract-ocr.github.io/tessdoc/Installation.html>`_
       is required by the ``.jpg``, ``.png`` and ``.gif`` parser.
 
-    - `sox <http://sox.sourceforge.net/>`_
+    - `sox <https://sox.sourceforge.net/>`_
       is required by the ``.mp3`` and ``.ogg`` parser.
       You need to install ffmpeg, lame, libmad0 and libsox-fmt-mp3,
       before building sox, for these filetypes to work.

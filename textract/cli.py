@@ -4,40 +4,39 @@ Use argparse to handle command-line arguments.
 
 import argparse
 import encodings
-import os
 import pkgutil
 import sys
-import six
-import re
-import glob
+from pathlib import Path
 
 import argcomplete
 
 from . import VERSION
-from .parsers import DEFAULT_ENCODING, _get_available_extensions
+from .parsers import DEFAULT_OUTPUT_ENCODING, _get_available_extensions
 
 
 class AddToNamespaceAction(argparse.Action):
-    """This adds KEY,VALUE arbitrary pairs to the argparse.Namespace object
-    """
+    """This adds KEY,VALUE arbitrary pairs to the argparse.Namespace object"""
+
     def __call__(self, parser, namespace, values, option_string=None):
-        key, val = values.strip().split('=')
+        assert isinstance(values, str)  # for pyright
+        key, val = values.strip().split("=")
         if hasattr(namespace, key):
-            parser.error((
-                'Duplicate specification of the key "%(key)s" with --option.'
-            ) % locals())
+            parser.error(
+                ('Duplicate specification of the key "%(key)s" with --option.')
+                % locals()
+            )
         setattr(namespace, key, val)
 
 
 # Fix FileType to honor 'b' flag, see: https://bugs.python.org/issue14156
 class FileType(argparse.FileType):
     def __call__(self, string):
-        if string == '-' and six.PY3:
-            if 'r' in self._mode:
-                string = sys.stdin.fileno()
-            elif 'w' in self._mode:
-                string = sys.stdout.fileno()
-        return super(FileType, self).__call__(string)
+        if string == "-":
+            if "r" in self._mode:
+                return sys.stdin.buffer if "b" in self._mode else sys.stdin
+            if "w" in self._mode:
+                return sys.stdout.buffer if "b" in self._mode else sys.stdout
+        return super().__call__(string)
 
 
 # This function is necessary to enable autodocumentation of the script
@@ -48,43 +47,76 @@ def get_parser():
 
     # initialize the parser
     parser = argparse.ArgumentParser(
-        description=(
-            'Command line tool for extracting text from any document. '
-        ) % locals(),
+        description="Command line tool for extracting text from any document.",
     )
 
     # define the command line options here
-    parser.add_argument(
-        'filename', help='Filename to extract text.',
-    ).completer = argcomplete.completers.FilesCompleter
-    parser.add_argument(
-        '-e', '--encoding', type=str, default=DEFAULT_ENCODING,
-        choices=_get_available_encodings(),
-        help='Specify the encoding of the output.',
-    )
-    parser.add_argument(
-        '--extension', type=str, default=None,
-        choices=_get_available_extensions(),
-        help='Specify the extension of the file.',
-    )
-    parser.add_argument(
-        '-m', '--method', default='',
-        help='Specify a method of extraction for formats that support it',
-    )
-    parser.add_argument(
-        '-o', '--output', type=FileType('wb'), default='-',
-        help='Output raw text in this file',
-    )
-    parser.add_argument(
-        '-O', '--option', type=str, action=AddToNamespaceAction,
+    filename_action = parser.add_argument(
+        "filename",
         help=(
-            'Add arbitrary options to various parsers of the form '
-            'KEYWORD=VALUE. A full list of available KEYWORD options is '
-            'available at http://bit.ly/textract-options'
+            "Filename to extract text. Pass '-' to read the document from "
+            "stdin instead (beta, requires --extension since there's no "
+            "filename to detect it from)."
+        ),
+    )
+    filename_action.completer = argcomplete.completers.FilesCompleter  # type: ignore[attr-defined]
+    parser.add_argument(
+        "-e",
+        "--encoding",
+        dest="output_encoding",
+        type=str,
+        default=DEFAULT_OUTPUT_ENCODING,
+        choices=_get_available_encodings(),
+        help="Specify the encoding of the output.",
+    )
+    parser.add_argument(
+        "-i",
+        "--input-encoding",
+        dest="input_encoding",
+        type=str,
+        default=None,
+        choices=_get_available_encodings(),
+        help=(
+            "Specify the encoding of the input file. If omitted, the "
+            "encoding is auto-detected."
         ),
     )
     parser.add_argument(
-        '-v', '--version', action='version', version='%(prog)s '+VERSION,
+        "--extension",
+        type=str,
+        default=None,
+        choices=_get_available_extensions(),
+        help="Specify the extension of the file.",
+    )
+    parser.add_argument(
+        "-m",
+        "--method",
+        default="",
+        help="Specify a method of extraction for formats that support it",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=FileType("wb"),
+        default="-",
+        help="Output raw text in this file",
+    )
+    parser.add_argument(
+        "-O",
+        "--option",
+        type=str,
+        action=AddToNamespaceAction,
+        help=(
+            "Add arbitrary options to various parsers of the form "
+            "KEYWORD=VALUE. A full list of available KEYWORD options is "
+            "available at http://bit.ly/textract-options"
+        ),
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version="%(prog)s " + VERSION,
     )
 
     # enable autocompletion with argcomplete
@@ -100,9 +132,10 @@ def _get_available_encodings():
     Inspiration from http://stackoverflow.com/a/3824405/564709
     """
     available_encodings = set(encodings.aliases.aliases.values())
-    paths = [os.path.dirname(encodings.__file__)]
-    for importer, modname, ispkg in pkgutil.walk_packages(path=paths):
-        available_encodings.add(modname)
+    paths = [str(Path(encodings.__file__).parent)]
+    available_encodings.update(
+        modname for importer, modname, ispkg in pkgutil.walk_packages(path=paths)
+    )
     available_encodings = list(available_encodings)
     available_encodings.sort()
     return available_encodings

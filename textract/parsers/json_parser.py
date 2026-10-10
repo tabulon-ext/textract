@@ -1,18 +1,16 @@
 import json
-import six
 
-from .utils import BaseParser
+from .utils import DecodedParser
 
 
-class Parser(BaseParser):
+class Parser(DecodedParser):
     """Extract all of the string values of a json file (no keys as those
     are, in some sense, markup). This is useful for parsing content
     from mongodb dumps, for example.
     """
 
-    def extract(self, filename, **kwargs):
-        with open(filename, 'r') as raw:
-            deserialized_json = json.load(raw)
+    def extract_from_text(self, text, **kwargs):
+        deserialized_json = json.loads(text)
         return self.get_text(deserialized_json)
 
     def get_text(self, deserialized_json):
@@ -21,18 +19,17 @@ class Parser(BaseParser):
         deserialized_json in a consistent (alphabetical) order.
         """
         if isinstance(deserialized_json, dict):
-            result = ''
+            result = ""
             for key in sorted(deserialized_json):
-                result += self.get_text(deserialized_json[key]) + ' '
+                result += self.get_text(deserialized_json[key]) + " "
             return result
 
         if isinstance(deserialized_json, list):
-            result = ''
+            result = ""
             for item in deserialized_json:
-                result += self.get_text(item) + ' '
+                result += self.get_text(item) + " "
             return result
 
-        if isinstance(deserialized_json, six.string_types):
+        if isinstance(deserialized_json, str):
             return deserialized_json
-        else:
-            return ''
+        return ""

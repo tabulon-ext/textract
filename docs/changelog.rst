@@ -5,11 +5,68 @@ This project uses `semantic versioning <http://semver.org/>`_ to
 track version numbers, where backwards incompatible changes
 (highlighted in **bold**) bump the major version of the package.
 
-
-latest changes in development for next release
-----------------------------------------------
+NEXT RELEASE
+-------------------
 
 .. THANKS FOR CONTRIBUTING; ADD YOUR UNRELEASED CHANGES HERE!
+
+2.1.0
+-------------------
+
+* Publish a wheel alongside the sdist on PyPI (`#560`_ by `@KyleKing`_)
+* **Drop support for Python 3.9, now requiring 3.10+** (`#585`_ by `@KyleKing`_)
+* Publish a ``-full`` Docker image to GHCR with all system dependencies
+  preinstalled except LibreOffice, which most users don't need; includes
+  pocketsphinx for offline audio transcription (`#600`_ by `@KyleKing`_)
+* Minor nitpick to remove unused line (`#559`_ by `@KyleKing`_)
+* Utilize openpyxl for xlsx after xlrd dropped support (`#572`_ by `@KyleKing`_)
+* Prevent opening a cmd window with ``Popen()`` on Windows (`#574`_ by
+  `@KyleKing`_)
+* Replace unmaintained ``antiword`` with LibreOffice for ``.doc`` extraction
+  (`#582`_ by `@KyleKing`_)
+* Add ``.ods`` spreadsheet support (`#583`_ by `@KyleKing`_)
+* Report which file extension triggered a missing module or missing
+  executable error (`#575`_ by `@KyleKing`_)
+* Standardize PDF text extraction to UTF-8 to avoid mangled non-Latin text
+  (`#596`_ by `@KyleKing`_)
+* Honor ``input_encoding`` in the csv, json, eml, and html parsers and add
+  the ``--input-encoding`` CLI flag; introduces ``DecodedParser`` base class
+  for parsers that operate on decoded text. A valid but incorrect
+  ``input_encoding`` now raises a friendly ``InvalidInputEncoding`` error
+  instead of a raw ``UnicodeDecodeError`` (`#573`_ by `@KyleKing`_)
+* Beta: accept in-memory and streamed input via ``process_bytes``,
+  ``process_stream``, and CLI ``-`` stdin, normalized through a new
+  ``Source`` abstraction. csv reads lazily with an explicit
+  ``input_encoding`` instead of buffering the whole document; docx opens
+  in memory via the new ``BytesParser`` base class. **The core now invokes
+  ``parser.process_source(source, ...)`` instead of ``parser.process(filename,
+  ...)``, so third-party parsers that override ``process`` must migrate to
+  ``process_source`` (or ``extract``/``extract_from_text``/
+  ``extract_from_bytes``, which are still honored)** (`#588`_ by `@KyleKing`_)
+
+2.0.0
+-------------------
+
+* Major modernization of textract absorbing the `textract-py3` fork (`#543`_ by `@KyleKing`_)
+
+  * Implement GitHub Actions CI/CD and improve test coverage
+  * Fix minor inconsistencies on Windows
+  * Resolve dependency specification errors by migrating to uv
+  * Update some minimum dependency versions and sets minimum Python to 3.9
+  * Migrate to PyPi Trusted Publisher for releases
+
+* Multiple Fixes:
+
+  * Return null on empty stream (`#422`_ by `@TheElementalOfDestruction`_)
+  * Enable encoding detection for the txt parser (`#456`_ by `@LoicGrobol`_)
+  * Catch ShellError from pdf2txt.py (`#495`_ by `@dhrim`_)
+  * Support python3.12 (`#502`_ by `@branchv`_)
+
+* Documentation Updates
+
+  * Add colons to issue template for consistency (`#520`_ by `@mcp292`_)
+  * Fix a few typos (`#430`_ by `@timgates42`_)
+
 1.6.5
 -------------------
 
@@ -23,14 +80,12 @@ latest changes in development for next release
 
   * fixing dependency declarations (`#162`_ by `@lillypad`_)
 
-
 1.6.1
 -------------------
 
 * several bug fixes, including:
 
   * fixing the readthedocs build (`#150`_)
-
 
 1.6.0
 -------------------
@@ -103,14 +158,12 @@ latest changes in development for next release
   * updated tests for ``.html``, ``.ogg``, ``.wav``, and ``.mp3`` file types to
     be consistent with more recent versions of the underlying packages.
 
-
 1.3.0
 -----
 
 * support for ``.rtf`` files (`#84`_)
 
 * support for ``.msg`` files (`#87`_ and `#17`_ by `@anthonygarvan`_)
-
 
 1.2.0
 -----
@@ -132,7 +185,6 @@ latest changes in development for next release
 
   * standardizing testing environment to be compatible with different versions
     of third-party command line tools (`#78`_)
-
 
 1.1.0
 -----
@@ -161,7 +213,6 @@ latest changes in development for next release
 
   * improved html output with reduced whitespace around inline
     elements in output text (`#58`_ by `@eiotec`_)
-
 
 1.0.0
 -----
@@ -194,7 +245,6 @@ latest changes in development for next release
 
   * including support for Docker-based testing (`#46`_ by `@ShawnMilo`_)
 
-
 0.5.1
 -----
 
@@ -203,7 +253,6 @@ latest changes in development for next release
   * documentation fixes
 
   * shell commands hanging on large files (`#33`_)
-
 
 0.5.0
 -----
@@ -229,7 +278,6 @@ latest changes in development for next release
 
   * cleaned up implementation of extension parsers to avoid magic
 
-
 0.4.0
 -----
 
@@ -240,7 +288,6 @@ latest changes in development for next release
 * automated the documentation for the python package using
   sphinx-apidoc in docs/Makefile (`#9`_)
 
-
 0.3.0
 -----
 
@@ -248,7 +295,6 @@ latest changes in development for next release
 
 * fixed installation bug with not properly including requirements
   files in the manifest
-
 
 0.2.0
 -----
@@ -263,12 +309,10 @@ latest changes in development for next release
 
   * fixing tests to make sure the work properly on travis-ci
 
-
 0.1.0
 -----
 
 * Initial release, support for ``.docx`` and ``.pptx``
-
 
 .. list of contributors that are linked to above. putting links here
 .. to make the text above relatively clean
@@ -279,16 +323,21 @@ latest changes in development for next release
 .. _@ankushshah89: https://github.com/ankushshah89
 .. _@arvindch: https://github.com/arvindch
 .. _@barrust: https://github.com/barrust
+.. _@branchv: https://github.com/branchv
 .. _@AusIV: https://github.com/AusIV
 .. _@christomitov: https://github.com/christomitov
+.. _@dhrim: https://github.com/dhrim
 .. _@eiotec: https://github.com/eiotec
 .. _@evfredericksen: https://github.com/evfredericksen
 .. _@jaraco: https://github.com/jaraco
 .. _@jhale1805: https://github.com/jhale1805
 .. _@jsmith-mploir: https://github.com/jsmith-mploir
 .. _@kokxx: https://github.com/Kokxx
+.. _@KyleKing: https://github.com/KyleKing
 .. _@levivm: https://github.com/levivm
 .. _@lillypad: https://github.com/lillypad
+.. _@LoicGrobol: https://github.com/LoicGrobol
+.. _@mcp292: https://github.com/mcp292
 .. _@motazsaad: https://github.com/motazsaad
 .. _@onionradish: https://github.com/onionradish
 .. _@pierre-ernst: https://github.com/pierre-ernst
@@ -296,7 +345,8 @@ latest changes in development for next release
 .. _@ShawnMilo: https://github.com/ShawnMilo
 .. _@sirex: https://github.com/sirex
 .. _@suned: https://github.com/suned
-
+.. _@TheElementalOfDestruction: https://github.com/TheElementalOfDestruction
+.. _@timgates42: https://github.com/timgates42
 
 .. list of issues that have been resolved. putting links here to make
 .. the text above relatively clean
@@ -353,8 +403,8 @@ latest changes in development for next release
 .. _#114: https://github.com/deanmalmgren/textract/issues/114
 .. _#116: https://github.com/deanmalmgren/textract/issues/116
 .. _#119: https://github.com/deanmalmgren/textract/issues/119
-.. _#126: https://github.com/deanmalmgren/textract/issues/126
 .. _#122: https://github.com/deanmalmgren/textract/issues/122
+.. _#126: https://github.com/deanmalmgren/textract/issues/126
 .. _#127: https://github.com/deanmalmgren/textract/issues/127
 .. _#136: https://github.com/deanmalmgren/textract/issues/136
 .. _#139: https://github.com/deanmalmgren/textract/issues/139
@@ -366,3 +416,22 @@ latest changes in development for next release
 .. _#150: https://github.com/deanmalmgren/textract/issues/150
 .. _#162: https://github.com/deanmalmgren/textract/issues/162
 .. _#411: https://github.com/deanmalmgren/textract/issues/411
+.. _#422: https://github.com/deanmalmgren/textract/pull/422
+.. _#430: https://github.com/deanmalmgren/textract/pull/430
+.. _#456: https://github.com/deanmalmgren/textract/pull/456
+.. _#495: https://github.com/deanmalmgren/textract/pull/495
+.. _#502: https://github.com/deanmalmgren/textract/pull/502
+.. _#520: https://github.com/deanmalmgren/textract/pull/520
+.. _#543: https://github.com/deanmalmgren/textract/pull/543
+.. _#559: https://github.com/deanmalmgren/textract/pull/559
+.. _#560: https://github.com/deanmalmgren/textract/pull/560
+.. _#572: https://github.com/deanmalmgren/textract/pull/572
+.. _#573: https://github.com/deanmalmgren/textract/pull/573
+.. _#574: https://github.com/deanmalmgren/textract/pull/574
+.. _#575: https://github.com/deanmalmgren/textract/pull/575
+.. _#582: https://github.com/deanmalmgren/textract/pull/582
+.. _#583: https://github.com/deanmalmgren/textract/pull/583
+.. _#585: https://github.com/deanmalmgren/textract/pull/585
+.. _#588: https://github.com/deanmalmgren/textract/pull/588
+.. _#596: https://github.com/deanmalmgren/textract/pull/596
+.. _#600: https://github.com/deanmalmgren/textract/pull/600

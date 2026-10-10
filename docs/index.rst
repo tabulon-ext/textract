@@ -36,7 +36,7 @@ Currently supporting
 --------------------
 
 textract supports a growing list of file types for text extraction. If
-you don't see your favorite file type here, Please recommend other
+you don't see your favorite file type here, please recommend other
 file types by either mentioning them on the `issue tracker
 <https://github.com/deanmalmgren/textract/issues>`_ or by
 :ref:`contributing a pull request <contributing>`.
@@ -46,7 +46,7 @@ file types by either mentioning them on the `issue tracker
 
 * ``.tsv`` and ``.tab`` via python builtins
 
-* ``.doc`` via `antiword`_
+* ``.doc`` via `LibreOffice`_ (optional; see installation docs)
 
 * ``.docx`` via `python-docx2txt`_
 
@@ -67,6 +67,8 @@ file types by either mentioning them on the `issue tracker
 * ``.msg`` via `msg-extractor`_
 
 * ``.odt`` via python builtins
+
+* ``.ods`` via `odfpy <https://pypi.python.org/pypi/odfpy>`_
 
 * ``.ogg`` via `sox`_, `SpeechRecognition`_, and `pocketsphinx`_
 
@@ -91,7 +93,7 @@ file types by either mentioning them on the `issue tracker
 * ``.xls`` via `xlrd <https://pypi.python.org/pypi/xlrd>`_
 
 .. this is a list of all the packages that textract uses for extraction
-.. _antiword: http://www.winfield.demon.nl/
+.. _LibreOffice: https://www.libreoffice.org/
 .. _beautifulsoup4: http://beautiful-soup-4.readthedocs.org/en/latest/
 .. _ebooklib: https://github.com/aerkalov/ebooklib
 .. _msg-extractor: https://github.com/mattgwwalker/msg-extractor
@@ -144,6 +146,7 @@ Contents:
    command_line_interface
    python_package
    installation
+   platform_differences
    contributing
    changelog
 
